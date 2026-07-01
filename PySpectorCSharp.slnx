@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PySpector.Cli/PySpector.Cli.csproj" />
+    <Project Path="src/PySpector.Core/PySpector.Core.csproj" />
+    <Project Path="src/PySpector.Plugins/PySpector.Plugins.csproj" />
+    <Project Path="src/PySpector.Reporting/PySpector.Reporting.csproj" />
+    <Project Path="src/PySpector.RustBridge/PySpector.RustBridge.csproj" />
+    <Project Path="src/PySpector.Web/PySpector.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PySpector.Benchmarks/PySpector.Benchmarks.csproj" />
+    <Project Path="tests/PySpector.Cli.Tests/PySpector.Cli.Tests.csproj" />
+    <Project Path="tests/PySpector.Core.Tests/PySpector.Core.Tests.csproj" />
+    <Project Path="tests/PySpector.Plugins.Tests/PySpector.Plugins.Tests.csproj" />
+    <Project Path="tests/PySpector.Reporting.Tests/PySpector.Reporting.Tests.csproj" />
+  </Folder>
+</Solution>

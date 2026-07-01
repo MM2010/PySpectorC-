@@ -361,3 +361,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# PySpector project folder (not part of the C# solution)
+PySpector-main/
+
+# GitHub agent/skill/instruction customizations
+.github/
+
+# Benchmark test sources — downloaded Python repos for objective comparison
+source_test/

@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>PySpector.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Tommy" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\rules\built-in-rules.toml" Link="Rules\built-in-rules.toml" />
+    <EmbeddedResource Include="..\..\rules\built-in-rules-ai.toml" Link="Rules\built-in-rules-ai.toml" />
+  </ItemGroup>
+
+</Project>
