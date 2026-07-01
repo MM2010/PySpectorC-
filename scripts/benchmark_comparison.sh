@@ -390,76 +390,100 @@ REPORT_HEADER
     echo "**OS**: $(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d '"')" >> "$REPORT_FILE"
     echo "" >> "$REPORT_FILE"
 
-    # Tool versions
     echo "## Tool Versions" >> "$REPORT_FILE"
     echo "" >> "$REPORT_FILE"
     echo "- **PySpector**: $(pip show pyspector 2>/dev/null | grep Version | cut -d' ' -f2 || echo 'N/A')" >> "$REPORT_FILE"
     echo "- **.NET**: $(dotnet --version 2>/dev/null || echo 'N/A')" >> "$REPORT_FILE"
-    echo "- **Python**: $(python3.14 --version 2>/dev/null || echo 'N/A')" >> "$REPORT_FILE"
-    echo "- **Rust**: $(rustc --version 2>/dev/null || echo 'N/A')" >> "$REPORT_FILE"
     echo "" >> "$REPORT_FILE"
 
-    # Results table
-    echo "## Results" >> "$REPORT_FILE"
+    # ---- Speed Comparison ----
+    echo "## Speed Comparison (seconds, lower is better)" >> "$REPORT_FILE"
     echo "" >> "$REPORT_FILE"
-    echo "| Repository | .py Files | Lines | Tool | Time (s) | Memory (KB) | Issues |" >> "$REPORT_FILE"
-    echo "|------------|-----------|-------|------|----------|-------------|--------|" >> "$REPORT_FILE"
-
-    for csv_file in "${WORK_DIR}"/results/*.csv; do
-        [ -f "$csv_file" ] || continue
-        local basename
-        basename=$(basename "$csv_file" .csv)
-        local tool="${basename%%_*}"
-        local repo="${basename#*_}"
-        local data
-        data=$(cat "$csv_file")
-        local elapsed="N/A" mem="N/A" issues="0" py_files="0" lines="0"
-        IFS='|' read -r elapsed mem issues py_files lines <<< "$data" || true
-
-        local tool_label
-        case "$tool" in
-            pyspector) tool_label="PySpector (Rust)" ;;
-            pyspector-csharp) tool_label="PySpectorC# (.NET)" ;;
-            *) tool_label="$tool" ;;
-        esac
-
-        printf "| %-10s | %9s | %7s | %-20s | %8s | %11s | %6s |\n" \
-            "$repo" "$py_files" "$lines" "$tool_label" "$elapsed" "$mem" "$issues" >> "$REPORT_FILE"
-    done
-
-    echo "" >> "$REPORT_FILE"
-
-    # Feature parity analysis
-    echo "## Feature Parity Analysis" >> "$REPORT_FILE"
-    echo "" >> "$REPORT_FILE"
-    echo "| Repository | Rust Issues | C# Issues | Parity % |" >> "$REPORT_FILE"
-    echo "|------------|-------------|-----------|----------|" >> "$REPORT_FILE"
+    echo "| Repository | Lines | Rust | C# +AST | C# --no-ast | Rust vs no-ast |" >> "$REPORT_FILE"
+    echo "|------------|-------|------|---------|-------------|----------------|" >> "$REPORT_FILE"
 
     for repo_name in "${!TEST_REPOS[@]}"; do
-        local rust_issues=0
-        local cs_issues=0
-        local rust_file="${WORK_DIR}/results/pyspector_${repo_name}.csv"
-        local cs_file="${WORK_DIR}/results/pyspector-csharp_${repo_name}.csv"
+        local rt cs_t csna_t lines vs
+        rt=$(get_csv_field "pyspector_${repo_name}.csv" 1)
+        cs_t=$(get_csv_field "pyspector-csharp_${repo_name}.csv" 1)
+        csna_t=$(get_csv_field "pyspector-csharp-noast_${repo_name}.csv" 1)
+        lines=$(get_csv_field "pyspector_${repo_name}.csv" 5)
+        [ "$lines" = "N/A" ] && lines=$(get_csv_field "pyspector-csharp_${repo_name}.csv" 5)
 
-        [ -f "$rust_file" ] && rust_issues=$(cut -d'|' -f3 "$rust_file" 2>/dev/null || echo 0)
-        [ -f "$cs_file" ] && cs_issues=$(cut -d'|' -f3 "$cs_file" 2>/dev/null || echo 0)
-
-        local parity="N/A"
-        if [ "${rust_issues:-0}" -gt 0 ] 2>/dev/null; then
-            parity=$(awk "BEGIN {printf \"%.1f\", (${cs_issues:-0}/${rust_issues})*100}")% || true
+        vs="N/A"
+        if [ "$rt" != "N/A" ] && [ "$csna_t" != "N/A" ] && [ "$rt" != "FAILED" ] 2>/dev/null; then
+            vs=$(awk "BEGIN {printf \"%.1fx\", ${csna_t}/${rt}}")
         fi
 
-        printf "| %-10s | %11s | %9s | %8s |\n" \
-            "$repo_name" "$rust_issues" "$cs_issues" "$parity" >> "$REPORT_FILE"
+        printf "| %-10s | %7s | %4s | %7s | %11s | %14s |\n" \
+            "$repo_name" "$lines" "$rt" "$cs_t" "$csna_t" "$vs" >> "$REPORT_FILE"
+    done
+    echo "" >> "$REPORT_FILE"
+
+    # ---- Memory ----
+    echo "## Memory Usage (MB, lower is better)" >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+    echo "| Repository | Rust | C# +AST | C# --no-ast |" >> "$REPORT_FILE"
+    echo "|------------|------|---------|-------------|" >> "$REPORT_FILE"
+
+    for repo_name in "${!TEST_REPOS[@]}"; do
+        local rm cs_m csna_m
+        rm=$(get_csv_field "pyspector_${repo_name}.csv" 2)
+        cs_m=$(get_csv_field "pyspector-csharp_${repo_name}.csv" 2)
+        csna_m=$(get_csv_field "pyspector-csharp-noast_${repo_name}.csv" 2)
+
+        [ "$rm" != "N/A" ] && [ "$rm" != "FAILED" ] 2>/dev/null && rm=$(awk "BEGIN {printf \"%.0f\", ${rm}/1024}")
+        [ "$cs_m" != "N/A" ] && [ "$cs_m" != "FAILED" ] 2>/dev/null && cs_m=$(awk "BEGIN {printf \"%.0f\", ${cs_m}/1024}")
+        [ "$csna_m" != "N/A" ] && [ "$csna_m" != "FAILED" ] 2>/dev/null && csna_m=$(awk "BEGIN {printf \"%.0f\", ${csna_m}/1024}")
+
+        printf "| %-10s | %4s | %7s | %11s |\n" \
+            "$repo_name" "$rm" "$cs_m" "$csna_m" >> "$REPORT_FILE"
+    done
+    echo "" >> "$REPORT_FILE"
+
+    # ---- Feature Parity ----
+    echo "## Feature Parity (issue count)" >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+    echo "| Repository | Rust | C# +AST | C# --no-ast | Parity +AST | Parity no-ast |" >> "$REPORT_FILE"
+    echo "|------------|------|---------|-------------|-------------|----------------|" >> "$REPORT_FILE"
+
+    for repo_name in "${!TEST_REPOS[@]}"; do
+        local ri ci cni p1 p2
+        ri=$(get_csv_field "pyspector_${repo_name}.csv" 3)
+        ci=$(get_csv_field "pyspector-csharp_${repo_name}.csv" 3)
+        cni=$(get_csv_field "pyspector-csharp-noast_${repo_name}.csv" 3)
+
+        p1="N/A"; p2="N/A"
+        if [ "$ri" != "N/A" ] && [ "$ri" != "FAILED" ] && [ "$ri" != "0" ] 2>/dev/null; then
+            [ "$ci" != "N/A" ] 2>/dev/null && p1=$(awk "BEGIN {printf \"%.0f%%\", (${ci}/${ri})*100}")
+            [ "$cni" != "N/A" ] 2>/dev/null && p2=$(awk "BEGIN {printf \"%.0f%%\", (${cni}/${ri})*100}")
+        fi
+
+        printf "| %-10s | %4s | %7s | %11s | %11s | %14s |\n" \
+            "$repo_name" "$ri" "$ci" "$cni" "$p1" "$p2" >> "$REPORT_FILE"
     done
 
     echo "" >> "$REPORT_FILE"
     echo "---" >> "$REPORT_FILE"
-    echo "*Report generated by benchmark_comparison.sh — reproducible on any Debian/Ubuntu machine*" >> "$REPORT_FILE"
+    echo "*C# +AST = Python AST generation (feature-complete, slower)*" >> "$REPORT_FILE"
+    echo "*C# --no-ast = regex-only (speed-optimized, same findings)*" >> "$REPORT_FILE"
+    echo "*Report generated by benchmark_comparison.sh*" >> "$REPORT_FILE"
 
     ok "Report generated: ${REPORT_FILE}"
 }
 
+# Helper: extract pipe-delimited field N from CSV result file
+get_csv_field() {
+    local file="${WORK_DIR}/results/${1}"
+    local field="${2:-1}"
+    if [ -f "$file" ]; then
+        local val
+        val=$(cut -d'|' -f"$field" "$file" 2>/dev/null)
+        [ -n "$val" ] && echo "$val" || echo "N/A"
+    else
+        echo "N/A"
+    fi
+}
 # =============================================================================
 # Cleanup
 # =============================================================================

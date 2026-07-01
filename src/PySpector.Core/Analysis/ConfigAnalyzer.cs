@@ -3,81 +3,72 @@ using PySpector.Core.Models;
 
 namespace PySpector.Core.Analysis;
 
-/// <summary>
-/// Regex-based config/source file scanner. 1:1 mapping from config_analysis.rs.
-/// Uses ReadOnlySpan for zero-allocation line iteration and regex matching.
-/// </summary>
 public static partial class ConfigAnalyzer
 {
-    // Pre-compiled regex pattern for line splitting — zero allocation
     [GeneratedRegex("\r?\n")]
     private static partial Regex NewLineRegex();
 
     public static List<Issue> ScanFile(string filePath, string content, RuleSet ruleset)
     {
         var issues = new List<Issue>();
-        var contentSpan = content.AsSpan();
+        var span = content.AsSpan();
 
-        // Pre-filter rules: build a list of applicable rules once
-        var applicableRules = new List<(Rule Rule, Regex Pattern)>(ruleset.Rules.Length);
+        var rules = new List<(Rule Rule, Regex Pattern)>(ruleset.Rules.Length);
         foreach (var rule in ruleset.Rules)
         {
             if (rule.Pattern is null) continue;
             if (rule.FilePattern is not null && !FileSystemMatch(rule.FilePattern, filePath)) continue;
             if (rule.IsExcluded(filePath, content, ruleset.Defaults)) continue;
-            applicableRules.Add((rule, rule.Pattern));
+
+            rules.Add((rule, rule.Pattern));
         }
 
-        if (applicableRules.Count == 0) return issues;
+        if (rules.Count == 0) return issues;
 
-        int lineNumber = 0;
-        foreach (var lineRange in NewLineRegex().EnumerateSplits(contentSpan))
+        int num = 0;
+        foreach (var range in NewLineRegex().EnumerateSplits(span))
         {
-            lineNumber++;
-            var line = contentSpan[lineRange];
+            num++;
+            var line = span[range];
+            if (CommentStringDetector.IsInCommentOrString(line)) continue;
 
-            if (CommentStringDetector.IsInCommentOrString(line))
-                continue;
-
-            foreach (var (rule, pattern) in applicableRules)
+            foreach (var (rule, pattern) in rules)
             {
-                // Zero-allocation regex match via EnumerateMatches
-                if (!pattern.EnumerateMatches(line).MoveNext())
-                    continue;
-
-                var lineStr = line.ToString();
-
-                // Check line-level exclude pattern
-                if (rule.ExcludePattern is not null && rule.ExcludePattern.IsMatch(lineStr))
-                    continue;
-
-                issues.Add(new Issue(
-                    rule.Id,
-                    rule.Description,
-                    filePath,
-                    lineNumber,
-                    lineStr,
-                    rule.Severity,
-                    rule.Confidence,
-                    rule.Remediation,
-                    rule.Cwe));
+                if (!pattern.EnumerateMatches(line).MoveNext()) continue;
+                var s = line.ToString();
+                if (rule.ExcludePattern is not null && rule.ExcludePattern.IsMatch(s)) continue;
+                issues.Add(new Issue(rule.Id, rule.Description, filePath, num, s,
+                    rule.Severity, rule.Confidence, rule.Remediation, rule.Cwe));
             }
         }
 
         return issues;
     }
 
+    private static string? ExtractLiteral(string p)
+    {
+        if (p.StartsWith("(?i)", StringComparison.Ordinal) || p.StartsWith("(?-i)", StringComparison.Ordinal)) p = p[4..];
+        if (p.StartsWith("(?m)", StringComparison.Ordinal)) p = p[4..];
+        string best = "";
+        var c = new System.Text.StringBuilder();
+        foreach (var ch in p)
+        {
+            if (char.IsLetterOrDigit(ch) || ch == '_') c.Append(ch);
+            else { if (c.Length > best.Length) best = c.ToString(); c.Clear(); }
+        }
+        if (c.Length > best.Length) best = c.ToString();
+        return best.Length >= 4 ? best : null;
+    }
+
     private static bool FileSystemMatch(string pattern, string filePath)
     {
-        var normalized = filePath.Replace('\\', '/');
+        var n = filePath.Replace('\\', '/');
         if (pattern.Contains('*'))
         {
-            var escaped = "^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$";
-            // Simple glob-to-regex: no captures, DFA-safe
-            var regex = new Regex(escaped,
+            var r = new Regex("^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$",
                 RegexOptions.NonBacktracking | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            return regex.IsMatch(normalized);
+            return r.IsMatch(n);
         }
-        return normalized.Contains(pattern, StringComparison.OrdinalIgnoreCase);
+        return n.Contains(pattern, StringComparison.OrdinalIgnoreCase);
     }
 }

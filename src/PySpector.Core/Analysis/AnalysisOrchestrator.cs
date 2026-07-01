@@ -28,24 +28,30 @@ public static class AnalysisOrchestrator
             };
         }
 
-        // Collect all files to scan (including non-Python for regex scan)
         var enhancedExclusions = new List<string>(exclusions)
         {
             "*/tests/fixtures/*", "*/test/fixtures/*", "*_test.py", "*/test_*.py",
         };
 
-        var filesToScan = new ConcurrentBag<string>();
-        WalkDirectory(rootPath, enhancedExclusions, filesToScan);
-
-        var allFiles = filesToScan.ToList();
         var issues = new ConcurrentBag<Issue>();
 
-        // Phase 1: Regex scan on ALL files (parallel)
+        // Build lookup: filePath → pre-loaded content (avoids double I/O)
+        var pyContentMap = new Dictionary<string, string>(pyFiles.Count, StringComparer.OrdinalIgnoreCase);
+        foreach (var pf in pyFiles)
+            pyContentMap[pf.FilePath] = pf.Content;
+
+        // Phase 1: Regex scan on ALL files, using pre-loaded content when available
+        var allFiles = new ConcurrentBag<string>();
+        WalkDirectory(rootPath, enhancedExclusions, allFiles);
+
         Parallel.ForEach(allFiles, filePath =>
         {
             try
             {
-                var content = File.ReadAllText(filePath);
+                // Use pre-loaded content for Python files (avoids double disk read)
+                if (!pyContentMap.TryGetValue(filePath, out var content))
+                    content = File.ReadAllText(filePath);
+
                 var fileIssues = ConfigAnalyzer.ScanFile(filePath, content, ruleset);
                 foreach (var issue in fileIssues)
                     issues.Add(issue);
