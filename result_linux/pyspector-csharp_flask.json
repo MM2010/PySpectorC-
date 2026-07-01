@@ -1,0 +1,32 @@
+PySpector
+
+[
+  {
+    "rule_id": "SEC501",
+    "description": "Generic exec pattern detected in code.",
+    "file_path": "/root/script/benchmark_workspace/sources/flask/src/flask/config.py",
+    "line_number": 209,
+    "code": "exec(compile(config_file.read(), filename, \u0022exec\u0022), d.__dict__)",
+    "severity": 1,
+    "confidence": "Medium",
+    "remediation": "Dynamic code execution can be dangerous. Validate all inputs and consider safer alternatives.",
+    "cwe": "CWE-94"
+  },
+  {
+    "rule_id": "DJANGO_DEBUG001",
+    "description": "DEBUG=True in settings \u2014 full stack traces and internal state exposed to any HTTP client.",
+    "file_path": "/root/script/benchmark_workspace/sources/flask/src/flask/config.py",
+    "line_number": 65,
+    "code": "DEBUG = True",
+    "severity": 3,
+    "confidence": "High",
+    "remediation": "Set DEBUG=False in production. Use environment variables: DEBUG = os.environ.get(\u0027DEBUG\u0027, \u0027False\u0027) == \u0027True\u0027. Applies to Django, Flask, and any framework that respects a DEBUG flag.",
+    "cwe": "CWE-489"
+  }
+]
+
+[*] Scan complete. 2 issue(s) found.
+    Critical: 1
+    High:     0
+    Medium:   1
+    Low:      0

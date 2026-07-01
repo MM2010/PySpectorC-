@@ -1,0 +1,86 @@
+
+  o__ __o                   o__ __o                                         o
+ <|     v\                 /v     v\                                       <|>
+ / \     <\               />       <\                                      < >
+ \o/     o/   o      o   _\o____        \o_ __o      o__  __o       __o__   |        o__ __o    \o__ __o
+  |__  _<|/  <|>    <|>       \_\__o__   |    v\    /v      |>     />  \    o__/_   /v     v\    |     |>
+  |          < >    < >             \   / \    <\  />      //    o/         |      />       <\  / \   < >
+ <o>          \o    o/    \         /   \o/     /  \o    o/     <|          |      \         /  \o/
+  |            v\  /v      o       o     |     o    v\  /v __o   \\         o       o       o    |
+ / \            <\/>       <\__ __/>    / \ __/>     <\/> __/>    _\o__</   <\__    <\__ __/>   / \
+                 /                      \o/
+                o                        |
+             __/>                       / \
+
+Version: 0.2.0
+Made with <3 by github.com/ParzivalHack
+
+💡 A man is smoking a cigarette and blowing smoke rings into the air. His girlfriend becomes irritated with the smoke and says "Can't you see the warning on the cigarette pack? Smoking is hazardous to your health!" to which the man replies, "I am a programmer.  We don't worry about warnings; we only worry about errors."
+
+{
+  "summary": {
+    "issue_count": 6
+  },
+  "issues": [
+    {
+      "rule_id": "PY305",
+      "cwe": "CWE-94",
+      "description": "Use of exec() enables arbitrary code execution",
+      "file_path": "/root/script/benchmark_workspace/sources/requests/setup.py",
+      "line_number": 79,
+      "code": "exec(f.read(), about)",
+      "severity": "Critical",
+      "remediation": ""
+    },
+    {
+      "rule_id": "G405",
+      "cwe": "CWE-295",
+      "description": "Requests made without certificate verification.",
+      "file_path": "/root/script/benchmark_workspace/sources/requests/src/requests/sessions.py",
+      "line_number": 265,
+      "code": "resp = self.send(",
+      "severity": "High",
+      "remediation": "Remove 'verify=False' from requests calls to prevent man-in-the-middle attacks."
+    },
+    {
+      "rule_id": "TIMING759",
+      "cwe": "CWE-208",
+      "description": "Timing attack vulnerability in authentication \u2014 direct equality comparison of secret values.",
+      "file_path": "/root/script/benchmark_workspace/sources/requests/src/requests/auth.py",
+      "line_number": 87,
+      "code": "self.password == getattr(other, \"password\", None),",
+      "severity": "Medium",
+      "remediation": "Use hmac.compare_digest() or secrets.compare_digest() for all secret/hash comparisons."
+    },
+    {
+      "rule_id": "IMPORT825",
+      "cwe": "CWE-94",
+      "description": "Dynamic import vulnerability allowing code execution.",
+      "file_path": "/root/script/benchmark_workspace/sources/requests/src/requests/packages.py",
+      "line_number": 9,
+      "code": "locals()[package] = __import__(package)",
+      "severity": "High",
+      "remediation": "Avoid dynamic imports with user-controlled input. Use importlib with validated module names."
+    },
+    {
+      "rule_id": "TIMING759",
+      "cwe": "CWE-208",
+      "description": "Timing attack vulnerability in authentication \u2014 direct equality comparison of secret values.",
+      "file_path": "/root/script/benchmark_workspace/sources/requests/src/requests/auth.py",
+      "line_number": 309,
+      "code": "self.password == getattr(other, \"password\", None),",
+      "severity": "Medium",
+      "remediation": "Use hmac.compare_digest() or secrets.compare_digest() for all secret/hash comparisons."
+    },
+    {
+      "rule_id": "ENV_URL001",
+      "cwe": "CWE-918",
+      "description": "Environment variable used as HTTP endpoint URL \u2014 SSRF if the env var is attacker-controlled in CI/container environments.",
+      "file_path": "/root/script/benchmark_workspace/sources/requests/src/requests/sessions.py",
+      "line_number": 769,
+      "code": "or os.environ.get(\"CURL_CA_BUNDLE\")",
+      "severity": "High",
+      "remediation": "Validate env-var URLs against an allowlist of trusted domains before use. Never allow arbitrary HTTP endpoints via environment variables without scheme and host validation. Use a fixed default and only allow override to known-safe origins."
+    }
+  ]
+}

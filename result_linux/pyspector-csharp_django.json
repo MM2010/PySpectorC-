@@ -1,0 +1,120 @@
+PySpector
+
+[
+  {
+    "rule_id": "GLOBALS843",
+    "description": "globals() used in code-execution context \u2014 exec/eval with global namespace.",
+    "file_path": "/root/script/benchmark_workspace/sources/django/django/core/management/commands/shell.py",
+    "line_number": 127,
+    "code": "exec(sys.stdin.read(), globals())",
+    "severity": 1,
+    "confidence": "Medium",
+    "remediation": "Never pass globals() to exec/eval with untrusted code. Dynamic module attribute registration via globals()[name]=value is acceptable for plugin/codec loading.",
+    "cwe": "CWE-94"
+  },
+  {
+    "rule_id": "GLOBALS843",
+    "description": "globals() used in code-execution context \u2014 exec/eval with global namespace.",
+    "file_path": "/root/script/benchmark_workspace/sources/django/django/core/management/commands/shell.py",
+    "line_number": 117,
+    "code": "exec(options[\u0022command\u0022], globals())",
+    "severity": 1,
+    "confidence": "Medium",
+    "remediation": "Never pass globals() to exec/eval with untrusted code. Dynamic module attribute registration via globals()[name]=value is acceptable for plugin/codec loading.",
+    "cwe": "CWE-94"
+  },
+  {
+    "rule_id": "SEC501",
+    "description": "Generic exec pattern detected in code.",
+    "file_path": "/root/script/benchmark_workspace/sources/django/django/core/management/commands/shell.py",
+    "line_number": 78,
+    "code": "exec(compile(pythonrc_code, pythonrc, \u0022exec\u0022), imported_objects)",
+    "severity": 1,
+    "confidence": "Medium",
+    "remediation": "Dynamic code execution can be dangerous. Validate all inputs and consider safer alternatives.",
+    "cwe": "CWE-94"
+  },
+  {
+    "rule_id": "CRYPTO708",
+    "description": "Weak cryptographic key generation \u2014 non-CSPRNG used to generate tokens, keys, or secrets.",
+    "file_path": "/root/script/benchmark_workspace/sources/django/django/core/cache/backends/filebased.py",
+    "line_number": 112,
+    "code": "filelist = random.sample(filelist, int(num_entries / self._cull_frequency))",
+    "severity": 1,
+    "confidence": "Medium",
+    "remediation": "Use secrets.token_hex(), secrets.token_urlsafe(), or secrets.choice() for security-sensitive values. The random module uses Mersenne Twister which is predictable and not cryptographically secure.",
+    "cwe": "CWE-338"
+  },
+  {
+    "rule_id": "PY306_CACHE",
+    "description": "pickle.loads() in cache backend \u2014 cache poisoning leads to remote code execution.",
+    "file_path": "/root/script/benchmark_workspace/sources/django/django/core/cache/backends/filebased.py",
+    "line_number": 69,
+    "code": "previous_value = pickle.loads(zlib.decompress(f.read()))",
+    "severity": 3,
+    "confidence": "High",
+    "remediation": "Replace pickle-based cache serialization with JSON or msgpack. If pickle is required, authenticate the cache channel and use HMAC to verify payload integrity before deserializing.",
+    "cwe": "CWE-502"
+  },
+  {
+    "rule_id": "PY306_CACHE",
+    "description": "pickle.loads() in cache backend \u2014 cache poisoning leads to remote code execution.",
+    "file_path": "/root/script/benchmark_workspace/sources/django/django/core/cache/backends/filebased.py",
+    "line_number": 36,
+    "code": "return pickle.loads(zlib.decompress(f.read()))",
+    "severity": 3,
+    "confidence": "High",
+    "remediation": "Replace pickle-based cache serialization with JSON or msgpack. If pickle is required, authenticate the cache channel and use HMAC to verify payload integrity before deserializing.",
+    "cwe": "CWE-502"
+  },
+  {
+    "rule_id": "PY306_CACHE",
+    "description": "pickle.loads() in cache backend \u2014 cache poisoning leads to remote code execution.",
+    "file_path": "/root/script/benchmark_workspace/sources/django/django/core/cache/backends/redis.py",
+    "line_number": 27,
+    "code": "return pickle.loads(data)",
+    "severity": 3,
+    "confidence": "High",
+    "remediation": "Replace pickle-based cache serialization with JSON or msgpack. If pickle is required, authenticate the cache channel and use HMAC to verify payload integrity before deserializing.",
+    "cwe": "CWE-502"
+  },
+  {
+    "rule_id": "PY306_CACHE",
+    "description": "pickle.loads() in cache backend \u2014 cache poisoning leads to remote code execution.",
+    "file_path": "/root/script/benchmark_workspace/sources/django/django/core/cache/backends/locmem.py",
+    "line_number": 72,
+    "code": "value = pickle.loads(pickled)",
+    "severity": 3,
+    "confidence": "High",
+    "remediation": "Replace pickle-based cache serialization with JSON or msgpack. If pickle is required, authenticate the cache channel and use HMAC to verify payload integrity before deserializing.",
+    "cwe": "CWE-502"
+  },
+  {
+    "rule_id": "PY306_CACHE",
+    "description": "pickle.loads() in cache backend \u2014 cache poisoning leads to remote code execution.",
+    "file_path": "/root/script/benchmark_workspace/sources/django/django/core/cache/backends/locmem.py",
+    "line_number": 42,
+    "code": "return pickle.loads(pickled)",
+    "severity": 3,
+    "confidence": "High",
+    "remediation": "Replace pickle-based cache serialization with JSON or msgpack. If pickle is required, authenticate the cache channel and use HMAC to verify payload integrity before deserializing.",
+    "cwe": "CWE-502"
+  },
+  {
+    "rule_id": "PY306_CACHE",
+    "description": "pickle.loads() in cache backend \u2014 cache poisoning leads to remote code execution.",
+    "file_path": "/root/script/benchmark_workspace/sources/django/django/core/cache/backends/db.py",
+    "line_number": 95,
+    "code": "value = pickle.loads(base64.b64decode(value.encode()))",
+    "severity": 3,
+    "confidence": "High",
+    "remediation": "Replace pickle-based cache serialization with JSON or msgpack. If pickle is required, authenticate the cache channel and use HMAC to verify payload integrity before deserializing.",
+    "cwe": "CWE-502"
+  }
+]
+
+[*] Scan complete. 10 issue(s) found.
+    Critical: 6
+    High:     0
+    Medium:   4
+    Low:      0

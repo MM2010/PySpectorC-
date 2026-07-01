@@ -1,0 +1,86 @@
+
+  o__ __o                   o__ __o                                         o
+ <|     v\                 /v     v\                                       <|>
+ / \     <\               />       <\                                      < >
+ \o/     o/   o      o   _\o____        \o_ __o      o__  __o       __o__   |        o__ __o    \o__ __o
+  |__  _<|/  <|>    <|>       \_\__o__   |    v\    /v      |>     />  \    o__/_   /v     v\    |     |>
+  |          < >    < >             \   / \    <\  />      //    o/         |      />       <\  / \   < >
+ <o>          \o    o/    \         /   \o/     /  \o    o/     <|          |      \         /  \o/
+  |            v\  /v      o       o     |     o    v\  /v __o   \\         o       o       o    |
+ / \            <\/>       <\__ __/>    / \ __/>     <\/> __/>    _\o__</   <\__    <\__ __/>   / \
+                 /                      \o/
+                o                        |
+             __/>                       / \
+
+Version: 0.2.0
+Made with <3 by github.com/ParzivalHack
+
+💡 "We messed up the keming again guys."
+
+{
+  "summary": {
+    "issue_count": 6
+  },
+  "issues": [
+    {
+      "rule_id": "PY305",
+      "cwe": "CWE-94",
+      "description": "Use of exec() enables arbitrary code execution",
+      "file_path": "/root/script/benchmark_workspace/sources/flask/src/flask/config.py",
+      "line_number": 209,
+      "code": "exec(compile(config_file.read(), filename, \"exec\"), d.__dict__)",
+      "severity": "Critical",
+      "remediation": ""
+    },
+    {
+      "rule_id": "IMPORT825",
+      "cwe": "CWE-94",
+      "description": "Dynamic import vulnerability allowing code execution.",
+      "file_path": "/root/script/benchmark_workspace/sources/flask/src/flask/cli.py",
+      "line_number": 245,
+      "code": "__import__(module_name)",
+      "severity": "High",
+      "remediation": "Avoid dynamic imports with user-controlled input. Use importlib with validated module names."
+    },
+    {
+      "rule_id": "DJANGO_DEBUG001",
+      "cwe": "CWE-489",
+      "description": "DEBUG=True in settings \u2014 full stack traces and internal state exposed to any HTTP client.",
+      "file_path": "/root/script/benchmark_workspace/sources/flask/src/flask/config.py",
+      "line_number": 65,
+      "code": "DEBUG = True",
+      "severity": "Critical",
+      "remediation": "Set DEBUG=False in production. Use environment variables: DEBUG = os.environ.get('DEBUG', 'False') == 'True'. Applies to Django, Flask, and any framework that respects a DEBUG flag."
+    },
+    {
+      "rule_id": "PY001",
+      "cwe": "CWE-94",
+      "description": "Use of 'eval()' is highly dangerous.",
+      "file_path": "/root/script/benchmark_workspace/sources/flask/src/flask/cli.py",
+      "line_number": 1029,
+      "code": "eval(compile(f.read(), startup, \"exec\"), ctx)",
+      "severity": "High",
+      "remediation": "Avoid 'eval()'. Use safer alternatives like 'ast.literal_eval' for data parsing."
+    },
+    {
+      "rule_id": "IMPORT825",
+      "cwe": "CWE-94",
+      "description": "Dynamic import vulnerability allowing code execution.",
+      "file_path": "/root/script/benchmark_workspace/sources/flask/src/flask/helpers.py",
+      "line_number": 606,
+      "code": "__import__(import_name)",
+      "severity": "High",
+      "remediation": "Avoid dynamic imports with user-controlled input. Use importlib with validated module names."
+    },
+    {
+      "rule_id": "PY202",
+      "cwe": "CWE-327",
+      "description": "Use of broken hashing algorithm SHA1.",
+      "file_path": "/root/script/benchmark_workspace/sources/flask/src/flask/sessions.py",
+      "line_number": 295,
+      "code": "return hashlib.sha1(string)",
+      "severity": "Medium",
+      "remediation": "Use a stronger hashing algorithm like SHA-256."
+    }
+  ]
+}

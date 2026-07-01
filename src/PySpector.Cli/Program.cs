@@ -22,10 +22,11 @@ public static class Program
                   ?? "console";
         var severity = GetArg(args, "--severity", "-s") ?? "LOW";
         var ai = HasFlag(args, "--ai");
+        var noAst = HasFlag(args, "--no-ast");
         var outputFile = GetArg(args, "--output", "-o");
         var debug = HasFlag(args, "--debug");
 
-        await ExecuteScan(scanPath, format, severity, ai, outputFile, debug);
+        await ExecuteScan(scanPath, format, severity, ai, noAst, outputFile, debug);
         return 0;
     }
 
@@ -43,6 +44,7 @@ public static class Program
           -f, --format FORMAT Output format: console (default), json, sarif, html
           --json              Shorthand for --format json
           -s, --severity LVL  Minimum severity: LOW, MEDIUM, HIGH, CRITICAL
+          --no-ast            Skip Python AST generation (regex-only, much faster)
           --ai                Enable AI/LLM vulnerability rules
           -o, --output FILE   Write report to file instead of stdout
           --debug             Show debug/progress messages
@@ -64,7 +66,7 @@ public static class Program
         => Array.IndexOf(args, flag) >= 0;
 
     private static async Task ExecuteScan(
-        string scanPath, string format, string severity, bool ai,
+        string scanPath, string format, string severity, bool ai, bool noAst,
         string? outputFile, bool debug)
     {
         try
@@ -115,8 +117,8 @@ public static class Program
                 }
             }
 
-            // Phase 2: Batch-generate AST via persistent Python process (one IPC call for all files)
-            var astResults = PythonAstGenerator.IsAvailable
+            // Phase 2: Batch-generate AST via Python (skip with --no-ast for regex-only speed)
+            var astResults = (!noAst && PythonAstGenerator.IsAvailable)
                 ? PythonAstGenerator.GenerateBatch(filesToProcess.Select(f => (f.Content, f.Path)))
                 : new Dictionary<string, string>();
 

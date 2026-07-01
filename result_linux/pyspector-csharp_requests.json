@@ -1,0 +1,54 @@
+PySpector
+
+[
+  {
+    "rule_id": "SEC501",
+    "description": "Generic exec pattern detected in code.",
+    "file_path": "/root/script/benchmark_workspace/sources/requests/setup.py",
+    "line_number": 79,
+    "code": "exec(f.read(), about)",
+    "severity": 1,
+    "confidence": "Medium",
+    "remediation": "Dynamic code execution can be dangerous. Validate all inputs and consider safer alternatives.",
+    "cwe": "CWE-94"
+  },
+  {
+    "rule_id": "TIMING759",
+    "description": "Timing attack vulnerability in authentication \u2014 direct equality comparison of secret values.",
+    "file_path": "/root/script/benchmark_workspace/sources/requests/src/requests/auth.py",
+    "line_number": 309,
+    "code": "self.password == getattr(other, \u0022password\u0022, None),",
+    "severity": 1,
+    "confidence": "Low",
+    "remediation": "Use hmac.compare_digest() or secrets.compare_digest() for all secret/hash comparisons.",
+    "cwe": "CWE-208"
+  },
+  {
+    "rule_id": "TIMING759",
+    "description": "Timing attack vulnerability in authentication \u2014 direct equality comparison of secret values.",
+    "file_path": "/root/script/benchmark_workspace/sources/requests/src/requests/auth.py",
+    "line_number": 87,
+    "code": "self.password == getattr(other, \u0022password\u0022, None),",
+    "severity": 1,
+    "confidence": "Low",
+    "remediation": "Use hmac.compare_digest() or secrets.compare_digest() for all secret/hash comparisons.",
+    "cwe": "CWE-208"
+  },
+  {
+    "rule_id": "ENV_URL001",
+    "description": "Environment variable used as HTTP endpoint URL \u2014 SSRF if the env var is attacker-controlled in CI/container environments.",
+    "file_path": "/root/script/benchmark_workspace/sources/requests/src/requests/sessions.py",
+    "line_number": 769,
+    "code": "or os.environ.get(\u0022CURL_CA_BUNDLE\u0022)",
+    "severity": 2,
+    "confidence": "Medium",
+    "remediation": "Validate env-var URLs against an allowlist of trusted domains before use. Never allow arbitrary HTTP endpoints via environment variables without scheme and host validation. Use a fixed default and only allow override to known-safe origins.",
+    "cwe": "CWE-918"
+  }
+]
+
+[*] Scan complete. 4 issue(s) found.
+    Critical: 0
+    High:     1
+    Medium:   3
+    Low:      0

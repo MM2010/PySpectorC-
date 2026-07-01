@@ -300,6 +300,15 @@ run_benchmark_single() {
             cs_path=$(cat "${WORK_DIR}/.pyspector_csharp_path")
             local cmd="dotnet run --project ${cs_path}/src/PySpector.Cli -c Release -- ${repo_path} --format json --severity LOW"
             ;;
+        pyspector-csharp-noast)
+            if [ -f "${WORK_DIR}/.pyspector_csharp_skip" ]; then
+                warn "  PySpectorC# not built — skipping"
+                return 0
+            fi
+            local cs_path_noast
+            cs_path_noast=$(cat "${WORK_DIR}/.pyspector_csharp_path")
+            local cmd="dotnet run --project ${cs_path_noast}/src/PySpector.Cli -c Release -- ${repo_path} --format json --severity LOW --no-ast"
+            ;;
     esac
 
     # Use hyperfine for statistically valid measurement (min 3 runs, 1 warmup)
@@ -356,8 +365,11 @@ run_all_benchmarks() {
         # Original PySpector
         run_benchmark_single "pyspector" "$repo_name" "$repo_path" || true
 
-        # PySpectorC#
+        # PySpectorC# with AST (feature-complete, slower)
         run_benchmark_single "pyspector-csharp" "$repo_name" "$repo_path" || true
+
+        # PySpectorC# regex-only (no AST, speed comparison)
+        run_benchmark_single "pyspector-csharp-noast" "$repo_name" "$repo_path" || true
     done
 }
 
