@@ -43,9 +43,43 @@ public static class PythonAstGenerator
 
         try
         {
-            // Write Python batch script to temp file
+            // Write Python batch script — mirrors _ast_encode.py AstEncoder exactly
             File.WriteAllText(tmpScript, """
 import ast, json, sys
+
+class AstEncoder(json.JSONEncoder):
+    def default(self, node):
+        if isinstance(node, ast.AST):
+            out = {
+                "node_type": node.__class__.__name__,
+                "lineno": getattr(node, "lineno", -1),
+                "col_offset": getattr(node, "col_offset", -1),
+            }
+            child_nodes = {}
+            simple_fields = {}
+            for fname, value in ast.iter_fields(node):
+                if type(value) is list:
+                    if value and all(isinstance(n, ast.AST) for n in value):
+                        child_nodes[fname] = value
+                    else:
+                        simple_fields[fname] = str(value) if value else []
+                elif isinstance(value, ast.AST):
+                    child_nodes[fname] = [value]
+                else:
+                    if isinstance(value, bytes):
+                        simple_fields[fname] = value.decode("utf-8", errors="replace")
+                    elif isinstance(value, int) and value.bit_length() > 14000:
+                        simple_fields[fname] = 0
+                    elif isinstance(value, (int, float, str, bool)) or value is None:
+                        simple_fields[fname] = value
+                    else:
+                        simple_fields[fname] = str(value)
+            out["children"] = child_nodes
+            out["fields"] = simple_fields
+            return out
+        if isinstance(node, bytes):
+            return node.decode("utf-8", errors="replace")
+        return super().default(node)
 
 with open(sys.argv[1], encoding='utf-8') as f:
     items = json.load(f)
@@ -57,14 +91,7 @@ for it in items:
         results.append({
             'id': it['id'],
             'ok': True,
-            'ast': json.dumps(t, default=lambda o: {
-                'nt': o.__class__.__name__,
-                'ln': getattr(o, 'lineno', -1),
-                'co': getattr(o, 'col_offset', -1),
-                'fl': {k: v if isinstance(v, (int, float, str, bool, type(None))) else str(v)
-                       for k, v in ast.iter_fields(o)
-                       if not isinstance(v, (list, ast.AST))}
-            })
+            'ast': json.dumps(t, cls=AstEncoder)
         })
     except Exception as e:
         results.append({'id': it['id'], 'ok': False, 'err': str(e)})
