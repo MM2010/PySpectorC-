@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>PySpector.Core</RootNamespace>
+    <NoWarn>CA1859</NoWarn><!-- engine-swap returns base type intentionally -->
   </PropertyGroup>
 
   <ItemGroup>

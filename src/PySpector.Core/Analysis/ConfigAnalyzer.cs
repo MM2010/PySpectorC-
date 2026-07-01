@@ -12,14 +12,13 @@ public static partial class ConfigAnalyzer
     {
         var issues = new List<Issue>();
         var span = content.AsSpan();
-
         var rules = new List<(Rule Rule, Regex Pattern)>(ruleset.Rules.Length);
+
         foreach (var rule in ruleset.Rules)
         {
             if (rule.Pattern is null) continue;
             if (rule.FilePattern is not null && !FileSystemMatch(rule.FilePattern, filePath)) continue;
             if (rule.IsExcluded(filePath, content, ruleset.Defaults)) continue;
-
             rules.Add((rule, rule.Pattern));
         }
 
@@ -43,21 +42,6 @@ public static partial class ConfigAnalyzer
         }
 
         return issues;
-    }
-
-    private static string? ExtractLiteral(string p)
-    {
-        if (p.StartsWith("(?i)", StringComparison.Ordinal) || p.StartsWith("(?-i)", StringComparison.Ordinal)) p = p[4..];
-        if (p.StartsWith("(?m)", StringComparison.Ordinal)) p = p[4..];
-        string best = "";
-        var c = new System.Text.StringBuilder();
-        foreach (var ch in p)
-        {
-            if (char.IsLetterOrDigit(ch) || ch == '_') c.Append(ch);
-            else { if (c.Length > best.Length) best = c.ToString(); c.Clear(); }
-        }
-        if (c.Length > best.Length) best = c.ToString();
-        return best.Length >= 4 ? best : null;
     }
 
     private static bool FileSystemMatch(string pattern, string filePath)

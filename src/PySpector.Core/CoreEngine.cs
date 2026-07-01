@@ -32,11 +32,22 @@ public static class EngineFactory
         return engineType?.ToLowerInvariant() switch
         {
             "rust" => CreateRustEngine(),
-            _ => new CSharpCoreEngine(),
+            "csharp" => new CSharpCoreEngine(),
+            _ => TryCreateRustEngine() ?? new CSharpCoreEngine(),
         };
     }
 
-    private static CSharpCoreEngine CreateRustEngine()
+    /// <summary>Auto-detect: use Rust engine if native .so/.dll is available.</summary>
+    private static IAnalysisEngine? TryCreateRustEngine()
+    {
+        try
+        {
+            return CreateRustEngine();
+        }
+        catch { return null; }
+    }
+
+    private static IAnalysisEngine CreateRustEngine()
     {
         // Try to load Rust bridge dynamically
 #if RUST_BRIDGE
@@ -46,7 +57,7 @@ public static class EngineFactory
             if (bridgeType is not null && Activator.CreateInstance(bridgeType) is IAnalysisEngine engine)
                 return engine;
         }
-        catch { /* Fall back to C# engine */ }
+        catch { }
 #endif
         return new CSharpCoreEngine();
     }
